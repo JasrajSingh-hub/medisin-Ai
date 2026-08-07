@@ -1,0 +1,15 @@
+flask==3.0.0
+flask-cors==4.0.0
+tensorflow==2.13.0
+opencv-python==4.8.1.78
+numpy==1.24.3
+pillow==10.0.1
+h5py==3.9.0
+edge-tts==6.1.9
+pyttsx3==2.90
+python-dotenv==1.0.0
+pytest==7.4.3
+SpeechRecognition==3.10.0
+standard-aifc==3.13.0
+joblib==1.4.2
+scikit-learn==1.5.1
