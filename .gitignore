@@ -1,0 +1,74 @@
+# Python cache & runtime
+__pycache__/
+*.py[cod]
+*.pyo
+.pytest_cache/
+.mypy_cache/
+.coverage
+coverage/
+
+# Virtual Environments
+.venv/
+venv/
+env/
+
+# Environment Files
+.env
+.env.*
+
+# IDE configurations
+.vscode/
+.idea/
+
+# Logs
+logs/
+*.log
+
+# Temporary files & folders
+*.tmp
+*.temp
+*.cache
+.cache/
+temp/
+tmp/
+
+# Flutter build & caches
+.dart_tool/
+build/
+.flutter-plugins
+.flutter-plugins-dependencies
+.pub-cache/
+.pub/
+
+# Android
+android/.gradle/
+frontend/medisign_app/android/.gradle/
+frontend/medisign_app/android/app/.gradle/
+frontend/medisign_app/android/app/build/
+frontend/medisign_app/android/build/
+
+# iOS
+ios/Pods/
+frontend/medisign_app/ios/Pods/
+frontend/medisign_app/ios/build/
+
+# Node modules
+node_modules/
+
+# Generated Pipeline Outputs
+output/
+frames/
+processed/
+landmarks/
+emergency/output/
+
+# Video Datasets (DO NOT PUSH - Excluded due to large size)
+SOS/
+SOS_Augmented/
+SOS_Training/
+dataset/
+
+# OS-specific files
+Thumbs.db
+Desktop.ini
+.DS_Store
