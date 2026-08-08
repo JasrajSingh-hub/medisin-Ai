@@ -45,10 +45,19 @@ def _get_landmarker() -> Any:
     global _LANDMARKER
     if _LANDMARKER is None:
         if not LANDMARKER_PATH.exists():
-            raise RuntimeError(f"Hand landmarker not found at {LANDMARKER_PATH}")
+            print(f"Hand landmarker task file not found. Downloading to {LANDMARKER_PATH}...")
+            import urllib.request
+            LANDMARKER_PATH.parent.mkdir(parents=True, exist_ok=True)
+            url = "https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task"
+            try:
+                urllib.request.urlretrieve(url, str(LANDMARKER_PATH))
+                print("Hand landmarker download complete!")
+            except Exception as e:
+                raise RuntimeError(f"Failed to download hand landmarker from {url}: {e}")
+        
         from mediapipe.tasks import python as mp_python
         from mediapipe.tasks.python import vision
-
+ 
         base_options = mp_python.BaseOptions(model_asset_buffer=LANDMARKER_PATH.read_bytes())
         options = vision.HandLandmarkerOptions(
             base_options=base_options,
