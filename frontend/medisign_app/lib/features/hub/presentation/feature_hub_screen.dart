@@ -45,6 +45,15 @@ class FeatureHubScreen extends StatelessWidget {
         status: 'Standby',
         statusTone: _StatusTone.neutral,
       ),
+      const _FeatureCardData(
+        title: 'VitalGuard',
+        subtitle: 'Secure health records, role-scoped audits, and summary reports.',
+        icon: Icons.health_and_safety,
+        route: '/vital_guard',
+        accent: Color(0xFF22D3EE),
+        status: 'Audit Ready',
+        statusTone: _StatusTone.primary,
+      ),
     ];
 
     return Scaffold(

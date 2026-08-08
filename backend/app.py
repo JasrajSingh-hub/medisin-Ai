@@ -11,6 +11,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 from services.isl_sign_model import get_model
+from routers.vital_guard_router import router as vital_guard_router
 
 
 class ImagePayLoad(BaseModel):
@@ -28,10 +29,11 @@ class TextPayLoad(BaseModel):
 mp_hands = mp.solutions.hands
 hands = mp_hands.Hands(static_image_mode=True, max_num_hands=2)
 model = get_model()
-print("✅ ISL JSON model loaded!")
-print(f"✅ Model class: {type(model).__name__}")
+print("[OK] ISL JSON model loaded!")
+print(f"[OK] Model class: {type(model).__name__}")
 
 app = FastAPI()
+app.include_router(vital_guard_router)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],

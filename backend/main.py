@@ -7,6 +7,7 @@ from routers.prescription_router import router as prescription_router
 from routers.sign_router import router as sign_router
 from routers.speech_router import router as speech_router
 from routers.triage_router import router as triage_router
+from routers.vital_guard_router import router as vital_guard_router
 
 app = FastAPI(title="MediSign AI Backend", version="1.0.0")
 
@@ -24,6 +25,7 @@ app.include_router(emergency_router)
 app.include_router(speech_router)
 app.include_router(prescription_router)
 app.include_router(triage_router)
+app.include_router(vital_guard_router)
 
 
 
