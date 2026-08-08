@@ -15,8 +15,211 @@ router = APIRouter(prefix="/api", tags=["vital-guard"])
 mongo_uri = os.environ.get("MONGODB_URI", "mongodb://127.0.0.1:27017")
 db_name = os.environ.get("MONGODB_DB_NAME", "vitalguard")
 
+class MockCollection:
+    def __init__(self, data_list):
+        self.data_list = data_list
+        
+    def find(self, query=None, projection=None):
+        res = []
+        for item in self.data_list:
+            match = True
+            if query:
+                for k, v in query.items():
+                    if k not in item or item[k] != v:
+                        match = False
+                        break
+            if match:
+                res.append(item.copy())
+        return res
+        
+    def find_one(self, query, projection=None):
+        results = self.find(query, projection)
+        return results[0] if results else None
+        
+    def insert_one(self, document):
+        self.data_list.append(document)
+        return document
+        
+    def update_one(self, query, update):
+        doc = self.find_one(query)
+        if doc:
+            for d in self.data_list:
+                match = True
+                for k, v in query.items():
+                    if d.get(k) != v:
+                        match = False
+                        break
+                if match:
+                    if "$set" in update:
+                        for uk, uv in update["$set"].items():
+                            d[uk] = uv
+                    else:
+                        for uk, uv in update.items():
+                            d[uk] = uv
+                    return type('UpdateResult', (), {'matched_count': 1})
+        return type('UpdateResult', (), {'matched_count': 0})
+        
+    def delete_one(self, query):
+        doc = self.find_one(query)
+        if doc:
+            try:
+                self.data_list.remove(doc)
+            except ValueError:
+                pass
+            
+    def count_documents(self, query=None):
+        return len(self.find(query))
+        
+    def create_index(self, *args, **kwargs):
+        pass
+
+class MockDB:
+    def __init__(self):
+        self.patients_list = []
+        self.vitals_list = []
+        self.medications_list = []
+        self.doctor_instructions_list = []
+        self.nurse_tasks_list = []
+        self.messages_list = []
+        self.reports_list = []
+        self.ai_summaries_list = []
+        self.discharge_reports_list = []
+        
+        self.patients = MockCollection(self.patients_list)
+        self.vitals = MockCollection(self.vitals_list)
+        self.medications = MockCollection(self.medications_list)
+        self.doctor_instructions = MockCollection(self.doctor_instructions_list)
+        self.nurse_tasks = MockCollection(self.nurse_tasks_list)
+        self.messages = MockCollection(self.messages_list)
+        self.reports = MockCollection(self.reports_list)
+        self.ai_summaries = MockCollection(self.ai_summaries_list)
+        self.discharge_reports = MockCollection(self.discharge_reports_list)
+
+def seed_mock_db(db_instance):
+    patient_id_1 = "sample-patient-123"
+    db_instance.patients.insert_one({
+        "patient_id": patient_id_1,
+        "patient_uid": "PT-SAMPLE123",
+        "name": "John Doe",
+        "age": 45,
+        "gender": "Male",
+        "room": "101",
+        "condition": "Post-operative recovery",
+        "diagnosis": "Appendectomy",
+        "care_mode": "live_monitoring",
+        "status": "stable",
+        "admission_time": (datetime.datetime.utcnow() - datetime.timedelta(days=2)).isoformat() + "Z",
+        "discharge_time": None,
+        "active": 1,
+        "notes": "Patient recovering well from surgery",
+        "created_at": datetime.datetime.utcnow().isoformat() + "Z",
+        "updated_at": datetime.datetime.utcnow().isoformat() + "Z"
+    })
+    db_instance.vitals.insert_one({
+        "vital_id": "vital-sample-123",
+        "patient_id": patient_id_1,
+        "heart_rate": 72,
+        "systolic_bp": 120,
+        "diastolic_bp": 80,
+        "spo2": 98,
+        "temperature": 37.0,
+        "respiratory_rate": 16,
+        "timestamp": datetime.datetime.utcnow().isoformat() + "Z",
+        "attachment": {
+            "file_name": "xray_chest_postop.png",
+            "image_data_url": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
+            "attached_at": datetime.datetime.utcnow().isoformat() + "Z"
+        }
+    })
+    db_instance.medications.insert_one({
+        "medication_id": "med-sample-123",
+        "patient_id": patient_id_1,
+        "name": "Amoxicillin",
+        "dosage": "500mg",
+        "route": "oral",
+        "frequency": "2x daily",
+        "timing": "After food",
+        "start_time": datetime.datetime.utcnow().isoformat() + "Z",
+        "end_time": None,
+        "status": "active",
+        "created_at": datetime.datetime.utcnow().isoformat() + "Z",
+        "attachment": {
+            "file_name": "prescription_slip.png",
+            "image_data_url": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
+            "attached_at": datetime.datetime.utcnow().isoformat() + "Z"
+        }
+    })
+    
+    # Patient 2: Jane Smith (Attention)
+    patient_id_2 = "sample-patient-456"
+    db_instance.patients.insert_one({
+        "patient_id": patient_id_2,
+        "patient_uid": "PT-ATTN456",
+        "name": "Jane Smith",
+        "age": 34,
+        "gender": "Female",
+        "room": "104",
+        "condition": "Elevated temperature and heart rate",
+        "diagnosis": "Pneumonia",
+        "care_mode": "live_monitoring",
+        "status": "attention",
+        "admission_time": (datetime.datetime.utcnow() - datetime.timedelta(days=1)).isoformat() + "Z",
+        "discharge_time": None,
+        "active": 1,
+        "notes": "Monitor oxygen saturation closely",
+        "created_at": datetime.datetime.utcnow().isoformat() + "Z",
+        "updated_at": datetime.datetime.utcnow().isoformat() + "Z"
+    })
+    db_instance.vitals.insert_one({
+        "vital_id": "vital-sample-456",
+        "patient_id": patient_id_2,
+        "heart_rate": 98,
+        "systolic_bp": 115,
+        "diastolic_bp": 75,
+        "spo2": 95,
+        "temperature": 38.5,
+        "respiratory_rate": 20,
+        "timestamp": datetime.datetime.utcnow().isoformat() + "Z",
+        "attachment": None
+    })
+    
+    # Patient 3: Robert Johnson (Critical)
+    patient_id_3 = "sample-patient-789"
+    db_instance.patients.insert_one({
+        "patient_id": patient_id_3,
+        "patient_uid": "PT-CRIT789",
+        "name": "Robert Johnson",
+        "age": 62,
+        "gender": "Male",
+        "room": "205",
+        "condition": "Low oxygen saturation",
+        "diagnosis": "Acute heart failure",
+        "care_mode": "live_monitoring",
+        "status": "critical",
+        "admission_time": (datetime.datetime.utcnow() - datetime.timedelta(hours=12)).isoformat() + "Z",
+        "discharge_time": None,
+        "active": 1,
+        "notes": "High risk of cardiac event",
+        "created_at": datetime.datetime.utcnow().isoformat() + "Z",
+        "updated_at": datetime.datetime.utcnow().isoformat() + "Z"
+    })
+    db_instance.vitals.insert_one({
+        "vital_id": "vital-sample-789",
+        "patient_id": patient_id_3,
+        "heart_rate": 110,
+        "systolic_bp": 145,
+        "diastolic_bp": 95,
+        "spo2": 89,
+        "temperature": 36.8,
+        "respiratory_rate": 24,
+        "timestamp": datetime.datetime.utcnow().isoformat() + "Z",
+        "attachment": None
+    })
+
 try:
-    client = MongoClient(mongo_uri)
+    client = MongoClient(mongo_uri, serverSelectionTimeoutMS=2000)
+    # Trigger a command to test connection
+    client.admin.command('ping')
     db = client[db_name]
     # Create indexes
     db.patients.create_index("patient_id", unique=True)
@@ -31,62 +234,18 @@ try:
     
     # Auto-seed sample health record with evidence attached
     if db.patients.count_documents({}) == 0:
-        patient_id = "sample-patient-123"
-        db.patients.insert_one({
-            "patient_id": patient_id,
-            "patient_uid": "PT-SAMPLE123",
-            "name": "John Doe",
-            "age": 45,
-            "gender": "Male",
-            "room": "101",
-            "condition": "Post-operative recovery",
-            "diagnosis": "Appendectomy",
-            "care_mode": "live_monitoring",
-            "status": "stable",
-            "admission_time": (datetime.datetime.utcnow() - datetime.timedelta(days=2)).isoformat() + "Z",
-            "discharge_time": None,
-            "active": 1,
-            "notes": "Patient recovering well from surgery",
-            "created_at": datetime.datetime.utcnow().isoformat() + "Z",
-            "updated_at": datetime.datetime.utcnow().isoformat() + "Z"
-        })
-        db.vitals.insert_one({
-            "vital_id": "vital-sample-123",
-            "patient_id": patient_id,
-            "heart_rate": 72,
-            "systolic_bp": 120,
-            "diastolic_bp": 80,
-            "spo2": 98,
-            "temperature": 37.0,
-            "respiratory_rate": 16,
-            "timestamp": datetime.datetime.utcnow().isoformat() + "Z",
-            "attachment": {
-                "file_name": "xray_chest_postop.png",
-                "image_data_url": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
-                "attached_at": datetime.datetime.utcnow().isoformat() + "Z"
-            }
-        })
-        db.medications.insert_one({
-            "medication_id": "med-sample-123",
-            "patient_id": patient_id,
-            "name": "Amoxicillin",
-            "dosage": "500mg",
-            "route": "oral",
-            "frequency": "2x daily",
-            "timing": "After food",
-            "start_time": datetime.datetime.utcnow().isoformat() + "Z",
-            "end_time": None,
-            "status": "active",
-            "created_at": datetime.datetime.utcnow().isoformat() + "Z",
-            "attachment": {
-                "file_name": "prescription_slip.png",
-                "image_data_url": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
-                "attached_at": datetime.datetime.utcnow().isoformat() + "Z"
-            }
-        })
+        db_mock = MockDB()
+        seed_mock_db(db_mock)
+        for p in db_mock.patients_list:
+            db.patients.insert_one(p)
+        for v in db_mock.vitals_list:
+            db.vitals.insert_one(v)
+        for m in db_mock.medications_list:
+            db.medications.insert_one(m)
 except Exception as e:
-    print(f"MongoDB connection/index error: {e}")
-    db = None
+    print(f"MongoDB connection/index error: {e}. Using in-memory MockDB instead.")
+    db = MockDB()
+    seed_mock_db(db)
 
 # Helpers
 def generate_id():
