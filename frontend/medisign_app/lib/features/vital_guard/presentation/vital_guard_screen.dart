@@ -13,7 +13,7 @@ class VitalGuardScreen extends StatefulWidget {
 }
 
 class _VitalGuardScreenState extends State<VitalGuardScreen> {
-  final String _baseUrl = 'http://127.0.0.1:5000/api';
+  final String _baseUrl = 'https://medisin-ai-p9q1.onrender.com/api';
   String _selectedRole = 'Admin';
   List<dynamic> _patients = [];
   bool _isLoading = false;

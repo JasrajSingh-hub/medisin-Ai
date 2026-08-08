@@ -3,11 +3,7 @@ import 'dart:io';
 class BackendEndpoints {
   const BackendEndpoints._();
 
-  static String get _host {
-    return '127.0.0.1';
-  }
-
-  static String get _baseUrl => 'http://$_host:5000';
+  static String get _baseUrl => 'https://medisin-ai-p9q1.onrender.com';
   static String get moduleBBaseUrl => _baseUrl;
 
   static String get signPrediction => '$_baseUrl/predict';
